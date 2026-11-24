@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BloomName 2.0 ✳</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#1a1a2e;color:#e0e0e0;font-family:system-ui,-apple-system,sans-serif;overflow:hidden}
+#app{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.intro{text-align:center;z-index:10;transition:opacity .6s,transform .6s}
+.intro.hidden{opacity:0;transform:scale(.96);pointer-events:none;position:absolute}
+.eyebrow{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#e94560;margin-bottom:8px}
+h1{font-size:36px;font-weight:700;margin-bottom:6px;letter-spacing:-1px}
+h1 span{color:#e94560;animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.subtitle{font-size:16px;color:#a0a0b8;margin-bottom:28px}
+#name-form{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+#name-input{background:#16213e;border:1px solid #2a2a4a;border-radius:10px;padding:12px 18px;font-size:18px;color:#e0e0e0;width:240px;outline:none;transition:border-color .3s}
+#name-input:focus{border-color:#e94560}
+#name-input::placeholder{color:#555}
+#name-form button{background:#e94560;border:none;border-radius:10px;padding:12px 24px;font-size:16px;font-weight:600;color:#fff;cursor:pointer;transition:background .3s,transform .15s}
+#name-form button:hover{background:#ff5773}
+#name-form button:active{transform:scale(.97)}
+.result {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .8s;
+  z-index: 1;
+  overflow: hidden;
+  padding: 40px 8px 10px;
+}
+
+.result.show {
+  opacity: 1;
+  z-index: 5;
+}
+
+.result h2 {
+  font-size: clamp(16px, 2.2vh, 22px);
+  font-weight: 500;
+  color: #e0e0e0;
+  text-align: center;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.result h2 em {
+  color: #e94560;
+  font-style: normal;
+  font-weight: 700;
+}
+
+#ascii-container {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: "Courier New", Consolas, monospace;
+  line-height: 1;
+  text-align: center;
+}
+
+#ascii-container pre {
+  margin: 0;
+  white-space: pre;
+  line-height: 1;
+}
+
+#flower-legend {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 0;
+  max-width: 95vw;
+  flex-shrink: 0;
+  transform: translateY(-170px);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: clamp(10px, 1.3vh, 13px);
+  color: #aaa;
+  padding: 3px 6px;
+  background: #16213e88;
+  border-radius: 5px;
+  border: 1px solid #2a2a4a;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.dedication {
+  color: #e94560;
+  font-size: clamp(16px, 2.5vh, 22px);
+  font-weight: 700;
+  margin: 5px 0 0;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+  animation: dedicationPulse 1.8s ease-in-out infinite;
+  transform: translateY(-250px);
+}
+
+@keyframes dedicationPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: .65;
+  }
+}
+
+@media (max-width: 600px) {
+  .result {
+    padding: 40px 4px 8px;
+  }
+
+  #flower-legend {
+    max-width: 98vw;
+    gap: 3px;
+  }
+
+  .legend-item {
+    font-size: 10px;
+    padding: 2px 4px;
+  }
+}
+#back-btn{position:fixed;top:clamp(10px,1.2vh,14px);left:clamp(10px,1.2vh,14px);background:#16213e;border:1px solid #2a2a4a;border-radius:8px;padding:clamp(5px,0.6vh,7px) clamp(8px,1vw,14px);color:#aaa;font-size:clamp(11px,1.3vh,14px);cursor:pointer;z-index:20;display:none;transition:background .3s}
+#back-btn:hover{background:#2a2a4a;color:#fff}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <button id="back-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left preview-icon"><path d="m15 18-6-6 6-6"/></svg></button>
+
+  <section id="intro" class="intro">
+    <div class="eyebrow">A PERSONAL FLOWER GARDEN</div>
+    <h1>BloomName 2.0<span>✳</span></h1>
+    <p class="subtitle">Every letter of your name, a different flower.</p>
+    <form id="name-form">
+      <input type="text" id="name-input" placeholder="Enter your name..." maxlength="30" autocomplete="off" required>
+      <button type="submit">Grow my bouquet ✿</button>
+    </form>
+  </section>
+
+  <section id="result" class="result">
+    <h2>For <em id="bouquet-name"></em></h2>
+    <div id="ascii-container"></div>
+    <div id="flower-legend"></div>
+  </section>
+</div>
+
+<script>
+// ============================================================
+// FLOWER MAPPING — each letter → flower name + color palette
+// ============================================================
+const FLOWER_MAP = {
+  'A':{name:'Aster',   pal:['#a855f7','#c084fc','#d8b4fe','#e9d5ff','#f3e8ff'],center:'#fbbf24'},
+  'B':{name:'Buttercup',pal:['#fde047','#fef08a','#fef9c3','#fefce8'],center:'#92400e'},
+  'C':{name:'Camellia',pal:['#f472b6','#f9a8d4','#fbcfe8','#fce7f3'],center:'#fbbf24'},
+  'D':{name:'Dahlia', pal:['#fb923c','#fdba74','#fed7aa','#ffedd5'],center:'#854d0e'},
+  'E':{name:'Edelweiss',pal:['#f8fafc','#f1f5f9','#e2e8f0','#cbd5e1'],center:'#fbbf24'},
+  'F':{name:'Fuchsia',pal:['#d946ef','#e879f9','#f0abfc','#f5d0fe'],center:'#fef08a'},
+  'G':{name:'Gardenia',pal:['#f8fafc','#f1f5f9','#e2e8f0','#cbd5e1'],center:'#fde047'},
+  'H':{name:'Hydrangea',pal:['#3b82f6','#60a5fa','#93c5fd','#bfdbfe'],center:'#fef08a'},
+  'I':{name:'Iris',   pal:['#7c3aed','#a78bfa','#c4b5fd','#ddd6fe'],center:'#fbbf24'},
+  'J':{name:'Jasmine',pal:['#f8fafc','#f1f5f9','#e2e8f0'],center:'#fde047'},
+  'K':{name:'King Protea',pal:['#e11d48','#fb7185','#fda4af','#fecdd3'],center:'#a16207'},
+  'L':{name:'Lavender',pal:['#8b5cf6','#a78bfa','#c4b5fd','#ddd6fe'],center:'#fde047'},
+  'M':{name:'Marigold',pal:['#f97316','#fb923c','#fdba74','#fed7aa'],center:'#92400e'},
+  'N':{name:'Narcissus',pal:['#fef08a','#fef9c3','#fefce8'],center:'#f97316'},
+  'O':{name:'Orchid',pal:['#a21caf','#c026d3','#d946ef','#e879f9'],center:'#fef08a'},
+  'P':{name:'Peony', pal:['#ec4899','#f472b6','#f9a8d4','#fbcfe8'],center:'#fbbf24'},
+  'Q':{name:"Queen Anne's Lace",pal:['#f8fafc','#f1f5f9','#e2e8f0'],center:'#a16207'},
+  'R':{name:'Rose',   pal:['#dc2626','#ef4444','#f87171','#fca5a5'],center:'#92400e'},
+  'S':{name:'Sunflower',pal:['#eab308','#facc15','#fde047','#fef08a'],center:'#78350f'},
+  'T':{name:'Tulip',  pal:['#f43f5e','#fb7185','#fda4af','#fecdd3'],center:null,kind:'tulip'},
+  'U':{name:'Ursinia',pal:['#ea580c','#f97316','#fb923c'],center:'#78350f'},
+  'V':{name:'Violet', pal:['#6d28d9','#7c3aed','#8b5cf6','#a78bfa','#c4b5fd'],center:'#fde047'},
+  'W':{name:'Wisteria',pal:['#7c3aed','#a78bfa','#c4b5fd','#ddd6fe'],center:'#fef08a'},
+  'X':{name:'Xanthium',pal:['#a3e635','#bef264','#d9f99d'],center:'#78350f'},
+  'Y':{name:'Yarrow', pal:['#fef08a','#fef9c3','#fefce8'],center:'#92400e'},
+  'Z':{name:'Zinnia', pal:['#ec4899','#f472b6','#f9a8d4','#fbcfe3'],center:'#fbbf24'},
+};
+const DEFAULT_FLOWER = FLOWER_MAP['R'];
+
+function getFlower(ch){
+  const u=ch.toUpperCase();
+  return FLOWER_MAP[u]||DEFAULT_FLOWER;
+}
+
+// ============================================================
+// 3D ASCII BOUQUET RENDERER
+// ============================================================
+const SHADE = ".:-=+*%@";
+const PETAL_SHADE = "+*#%@";
+const FPS = 24;
+const SPIN_SPEED = 0.6;
+const TILT = 0.30;
+const CAM_DIST = 4.0;
+const PIVOT_Y = 0.2;
+
+// Light direction (normalized)
+const _L = [-0.45, 0.6, 0.66];
+const ln = Math.sqrt(_L[0]**2+_L[1]**2+_L[2]**2);
+const LX = _L[0]/ln, LY = _L[1]/ln, LZ = _L[2]/ln;
+
+// Palettes for non-flower parts
+const GREENS_HEX = ['#2d5a27','#3a6b30','#3f7235','#4a7f3a','#5a8f45','#6a9f50','#7db85e','#8fc76c','#a0d47a'];
+const RIBBON_HEX = ['#b8860b','#daa520','#ffd700','#fff4b0','#fffbe0','#fffbe0'];
+const PAPER_HEX = ['#8b7355','#a0896a','#c4b08a','#e8dcc8','#f2ede3','#f2ede3'];
+
+function hexLerp(pal, t){
+  const idx=Math.max(0,Math.min(pal.length-1,Math.floor(t*pal.length)));
+  return pal[idx];
+}
+
+function norm(v){
+  const m=Math.sqrt(v[0]**2+v[1]**2+v[2]**2)||1;
+  return [v[0]/m, v[1]/m, v[2]/m];
+}
+function cross(a,b){
+  return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+}
+function add(p,d,k){return [p[0]+d[0]*k, p[1]+d[1]*k, p[2]+d[2]*k];}
+
+// ============================================================
+// Build scene — returns {pts, flowers, babies, sparkles}
+// ============================================================
+function buildScene(flowers_list){
+  let seed = 21;
+  function rng(){seed=(seed*9301+49297)%233280;return seed/233280;}
+
+  const pts = [];
+  const neck = [0.0, -0.12, 0.0];
+
+  // Stems
+  for(const fl of flowers_list){
+    const pos=fl.pos, axis=fl.axis;
+    const base = add(pos, axis, -0.03);
+    for(let j=0;j<60;j++){
+      const t=j/59;
+      pts.push({p:[base[0]+(neck[0]-base[0])*t, base[1]+(neck[1]-base[1])*t, base[2]+(neck[2]-base[2])*t], n:[axis[0],0,axis[2]], pal:'green', tone:-0.15, two:true, ch:null, part:'stem', t:t});
+    }
+  }
+
+  // Leaves
+  for(let i=0;i<6;i++){
+    const a=(i+0.4)/6*2*Math.PI;
+    const c=Math.cos(a), s=Math.sin(a);
+    const base=[0.28*c,0.28,0.28*s];
+    const d=norm([c,0.15,s]);
+    const side=[-s,0,c];
+    const nn=norm(cross(side,d));
+    const L=0.28,W=0.06;
+    for(let ti=0;ti<28;ti++){
+      const t=ti/27;
+      for(let wi=-4;wi<=4;wi++){
+        const w=wi/4;
+        const curl=0.025*w*w;
+        pts.push({p:[base[0]+d[0]*L*t+side[0]*W*Math.sin(Math.PI*t)*w+nn[0]*curl, base[1]+d[1]*L*t-0.08*t*t+nn[1]*curl, base[2]+d[2]*L*t+side[2]*W*Math.sin(Math.PI*t)*w+nn[2]*curl], n:nn, tone:wi===0?-0.25:0, pal:'green', two:true, ch:null, part:'leaf', t:t});
+      }
+    }
+  }
+
+  // Paper wrap
+  const y0=-0.18,y1=0.28,r0=0.05,r1=0.34,rings=50;
+  const kk=(r1-r0)/(y1-y0);
+  for(let i=0;i<rings;i++){
+    const t=i/(rings-1);
+    const r=r0+(r1-r0)*t;
+    const count=Math.max(8,Math.floor(160*r));
+    for(let j=0;j<count;j++){
+      const ph=(j+rng())/count*2*Math.PI;
+      const cc=Math.cos(ph), ss=Math.sin(ph);
+      let y=y0+(y1-y0)*t;
+      if(t>0.9) y+=0.03*Math.sin(9*ph);
+      const fold=0.3*(Math.abs(Math.sin(5*ph))-0.6);
+      const nvec=norm([cc,-kk,ss]);
+      pts.push({p:[r*cc, y, r*ss], n:nvec, tone:fold, pal:'paper', two:false, ch:null, part:'paper'});
+    }
+  }
+
+  // Neck accents
+  for(let i=0;i<6;i++){
+    const a=i/6*2*Math.PI;
+    const sx=0.025*Math.cos(a), sz=0.025*Math.sin(a);
+    for(let j=0;j<35;j++){
+      const t=j/34;
+      pts.push({p:[sx*(1+1.2*t), -0.18-0.28*t, sz*(1+1.2*t)], n:[Math.cos(a),0,Math.sin(a)], tone:-0.1, pal:'green', two:true, ch:null, part:'accent', t:t});
+    }
+  }
+
+  // Ribbon
+  const by=-0.10;
+  const br=r0+kk*(by-y0)+0.01;
+  for(let j=0;j<80;j++){
+    const ph=j/80*2*Math.PI;
+    for(const dy of[-0.010,0,0.010]){
+      pts.push({p:[br*Math.cos(ph), by+dy, br*Math.sin(ph)], n:[Math.cos(ph),0,Math.sin(ph)], tone:0, pal:'ribbon', two:false, ch:null, part:'ribbon'});
+    }
+  }
+
+  // Ribbon knot
+  const knot=[0, by, br+0.01];
+  for(const side of[-1,1]){
+    for(let j=0;j<60;j++){
+      const a=j/60*2*Math.PI;
+      const lx=side*(0.06+0.06*Math.cos(a));
+      const ly=0.035*Math.sin(a)+0.02*(0.06+0.06*Math.cos(a))/0.12;
+      for(const fill of[1,0.7]){
+        pts.push({p:[knot[0]+lx*fill, knot[1]+ly*fill, knot[2]+0.01], n:[side*0.3,0.2,0.93], tone:0.1, pal:'ribbon', two:true, ch:null, part:'ribbon'});
+      }
+    }
+    for(let j=0;j<25;j++){
+      const t=j/24;
+      pts.push({p:[knot[0]+side*0.05*t, knot[1]-0.13*t, knot[2]+0.015], n:[side*0.2,0,0.98], tone:-0.05+0.05*Math.sin(t*9), pal:'ribbon', two:true, ch:null, part:'ribbon'});
+    }
+  }
+  for(const dx of[-0.008,0,0.008]){
+    pts.push({p:[dx, by, knot[2]+0.02], n:[0,0,1], tone:0.2, pal:'ribbon', two:true, ch:'@', part:'ribbon'});
+  }
+
+  // Baby's breath
+  const babies=[];
+  for(let i=0;i<60;i++){
+    const a=rng()*2*Math.PI;
+    const el=rng()*1.2+0.3;
+    const rr=rng()*0.18+0.40;
+    babies.push([rr*Math.cos(a)*Math.cos(el), 0.12+rr*Math.sin(el), rr*Math.sin(a)*Math.cos(el), rng()*6.28]);
+  }
+
+  // Sparkles
+  const sparkles=[];
+  for(let i=0;i<20;i++){
+    const a=rng()*2*Math.PI;
+    const rr=rng()*0.2+0.75;
+    sparkles.push([rr*Math.cos(a), rng()*1.3-0.3, rr*Math.sin(a), rng()*6.28, rng()*2.5+1.5]);
+  }
+
+  return {pts, flowers:flowers_list, babies, sparkles};
+}
+
+// ============================================================
+// RENDER FRAME → returns HTML string
+// ============================================================
+function renderFrame(scene, t, cols, rows){
+  const {pts, flowers, babies, sparkles} = scene;
+  const viewRows = rows - 1; 
+
+  const scale = Math.max(1, Math.min((viewRows-2)/1.45, (cols-2)/2.7));
+  const sxScale = scale * 2.0;
+  const cx = cols/2;
+  const cy = 1 + 0.78 * scale;
+
+  // --- TIME PHASES ---
+  let growth = 0, bloom = 0;
+  if (t < 1.5) {
+    growth = t / 1.5;
+  } else if (t < 2.5) {
+    growth = 1.0;
+    bloom = (t - 1.5) / 1.0 * 0.2; // 0 -> 0.2 (зарождение почек)
+  } else if (t < 3.5) {
+    growth = 1.0;
+    bloom = 0.2 + (t - 2.5) / 1.0 * 0.3; // 0.2 -> 0.5 (набухание бутона)
+  } else if (t < 5.5) {
+    growth = 1.0;
+    bloom = 0.5 + (t - 3.5) / 2.0 * 0.5; // 0.5 -> 1.0 (раскрытие лепестков)
+  } else {
+    growth = 1.0;
+    bloom = 1.0; // полное цветение
+  }
+
+  const rotTime = Math.max(0, t - 5.5);
+  const ang = rotTime * SPIN_SPEED;
+
+  const ca=Math.cos(ang), sa=Math.sin(ang);
+  const ct=Math.cos(TILT), st=Math.sin(TILT);
+
+  const bufSize = cols * viewRows;
+  const zbuf = new Float32Array(bufSize).fill(-1e9);
+  const chars = new Array(bufSize).fill(' ');
+  const colors = new Array(bufSize).fill('');
+
+  function project(x,y,z){
+    const xr=x*ca-z*sa, zr=x*sa+z*ca;
+    const yp=y-PIVOT_Y, yt=yp*ct-zr*st, zt=yp*st+zr*ct;
+    const f=CAM_DIST/(CAM_DIST-zt);
+    return [Math.round(cx+xr*f*sxScale), Math.round(cy-yt*f*scale), zt];
+  }
+  function projectF(x,y,z){
+    const xr=x*ca-z*sa, zr=x*sa+z*ca;
+    const yp=y-PIVOT_Y, yt=yp*ct-zr*st, zt=yp*st+zr*ct;
+    const f=CAM_DIST/(CAM_DIST-zt);
+    return [cx+xr*f*sxScale, cy-yt*f*scale, zt, f];
+  }
+  function plot(col, row, z, ch, color){
+    if(row<0||row>=viewRows||col<0||col>=cols) return;
+    const idx=row*cols+col;
+    if(z>zbuf[idx]){ zbuf[idx]=z; chars[idx]=ch; colors[idx]=color; }
+  }
+
+  // Hearts (Only after full bloom)
+  if (bloom >= 1.0) {
+    for(const h of hearts){
+      const col=Math.round((h[0]+0.015*Math.sin(t*1.2+h[2]))*cols)%cols;
+      plot(col, Math.round(h[1]*viewRows), -50, '♥', h[4]);
+    }
+  }
+
+  // Scene points (Stems, Leaves, Paper, Ribbon)
+  for(const pt of pts){
+    if(pt.part === 'stem' || pt.part === 'accent'){
+        if(pt.t < 1 - growth) continue;
+    }
+    if(pt.part === 'leaf'){
+        if(pt.t > growth) continue;
+    }
+    if(pt.part === 'paper' || pt.part === 'ribbon'){
+        if(bloom < 0.8) continue;
+    }
+
+    const [col,row,zt]=project(pt.p[0], pt.p[1], pt.p[2]);
+    const nxr=pt.n[0]*ca-pt.n[2]*sa, nzr=pt.n[0]*sa+pt.n[2]*ca;
+    const nyt=pt.n[1]*ct-nzr*st, nzt=pt.n[1]*st+nzr*ct;
+    let dot=nxr*LX+nyt*LY+nzt*LZ;
+    if(pt.two&&dot<0) dot=-dot*0.55;
+    let b=0.25+0.75*Math.max(0,dot)+pt.tone;
+    b=Math.min(0.999,Math.max(0,b));
+    const shadeIdx=Math.floor(b*SHADE.length);
+    const ch=pt.ch||SHADE[Math.min(SHADE.length-1,shadeIdx)];
+    let color;
+    if(pt.pal==='green') color=hexLerp(GREENS_HEX,b);
+    else if(pt.pal==='ribbon') color=hexLerp(RIBBON_HEX,b);
+    else if(pt.pal==='paper') color=hexLerp(PAPER_HEX,b);
+    else color='#888';
+    plot(col,row,zt,ch,color);
+  }
+
+  // Flower heads (Buds and Petals)
+  for(const fl of flowers){
+    if(bloom === 0) continue;
+    const [fx,fy,zt,f]=projectF(fl.pos[0],fl.pos[1],fl.pos[2]);
+    const currentR = fl.R * bloom;
+    const rx=currentR*f*sxScale, ry=currentR*f*scale;
+    if(rx<0.5||ry<0.5)continue;
+    const dim=-0.4*(1-Math.min(1,Math.max(0,(zt+0.6)/1.2)));
+    
+    const rowMin=Math.max(0,Math.floor(fy-ry)-1);
+    const rowMax=Math.min(viewRows-1,Math.floor(fy+ry)+2);
+    const colMin=Math.max(0,Math.floor(fx-rx)-1);
+    const colMax=Math.min(cols-1,Math.floor(fx+rx)+2);
+
+    // BUD PHASE (bloom < 0.5)
+    if (bloom < 0.5) {
+      for(let r=rowMin;r<=rowMax;r++){
+        const dy=(r+0.5-fy)/ry;
+        for(let c=colMin;c<=colMax;c++){
+          const dx=(c+0.5-fx)/rx;
+          if(dx*dx+dy*dy>1)continue;
+          let ch = bloom < 0.2 ? '·' : 'o';
+          let color = bloom < 0.2 ? '#3a6b30' : '#4a7f3a';
+          if (bloom > 0.35) { ch = 'O'; color = '#a16207'; }
+          plot(c,r,zt,ch,color);
+        }
+      }
+      continue;
+    }
+
+    // FLOWER PETALS PHASE (bloom >= 0.5)
+    const rot=fl.seed+ang*0.7;
+    const pal=fl.pal, cpal=fl.center?[fl.center]:null;
+    const nPet=fl.n_pet;
+
+    for(let r=rowMin;r<=rowMax;r++){
+      const dy=(r+0.5-fy)/ry;
+      for(let c=colMin;c<=colMax;c++){
+        const dx=(c+0.5-fx)/rx;
+        if(fl.kind!=='tulip'){
+          const s=Math.sqrt(dx*dx+dy*dy);
+          if(s>1)continue;
+          let ch, color;
+          if(s<0.3){
+            let bb=0.55-0.35*dx-0.35*dy+dim;
+            bb=Math.min(0.999,Math.max(0,bb));
+            ch=s<0.17?'@':'o';
+            color=cpal?cpal[Math.min(cpal.length-1,Math.floor(bb*cpal.length))]:'#fbbf24';
+            plot(c,r,zt+0.06,ch,color);
+            continue;
+          }
+          const ph=Math.atan2(dy,dx);
+          const reach=0.32+0.68*Math.pow(Math.abs(Math.cos(nPet*(ph+rot)/2)),0.7);
+          if(s>reach)continue;
+          const edge=s>reach-0.14?-0.22:0;
+          let bb=0.62-0.22*dx-0.28*dy+0.12*s+edge+dim;
+          bb=Math.min(0.999,Math.max(0,bb));
+          ch=PETAL_SHADE[Math.min(PETAL_SHADE.length-1,Math.floor(bb*PETAL_SHADE.length))];
+          color=hexLerp(pal,bb);
+          plot(c,r,zt+0.04*(1-s),ch,color);
+        } else {
+          const v=(1-dy)/2;
+          if(v<0||v>1)continue;
+          const hw=0.62*Math.sin(Math.PI*0.5*Math.min(1,v*1.5+0.05));
+          if(hw<=0||Math.abs(dx)>hw)continue;
+          const xn=dx/hw;
+          if(v>0.72+0.28*Math.pow(Math.cos(1.5*Math.PI*xn),2))continue;
+          const seam=(Math.abs(Math.abs(xn)-0.33)<0.12&&v>0.3)?-0.25:0;
+          let bb=0.55-0.3*xn+0.1*v+seam+dim;
+          bb=Math.min(0.999,Math.max(0,bb));
+          const ch=PETAL_SHADE[Math.min(PETAL_SHADE.length-1,Math.floor(bb*PETAL_SHADE.length))];
+          const color=hexLerp(pal,bb);
+          plot(c,r,zt+0.03,ch,color);
+        }
+      }
+    }
+  }
+
+  // Baby's breath (Appears at 80% bloom)
+  if (bloom >= 0.8) {
+    for(const b of babies){
+      const [col,row,zt]=project(b[0],b[1],b[2]);
+      const star=Math.sin(t*2+b[3])>0.6;
+      plot(col,row,zt+0.02,star?'*':'·',star?'#fef08a':'#94a3b8');
+    }
+  }
+
+  // Sparkles (Appears at 100% bloom)
+  if (bloom >= 1.0) {
+    for(const sp of sparkles){
+      const [col,row,zt]=project(sp[0],sp[1],sp[2]);
+      const tw=Math.sin(t*sp[4]+sp[3]);
+      if(tw>0.85) plot(col,row,zt,'*','#fef08a');
+      else if(tw>0.4) plot(col,row,zt,'+','#fde047');
+      else if(tw>0) plot(col,row,zt,'·','#94a3b8');
+    }
+  }
+
+  // Build HTML
+  const msg = bloom >= 1.0 ? 'for you ♥' : null;
+  const mstart = msg ? Math.max(0,Math.floor((cols-msg.length)/2)) : 0;
+  const shift=Math.floor(t*6);
+  const msgClr=['#f472b6','#e879f9','#a78bfa','#818cf8','#60a5fa','#f472b6','#e879f9','#a78bfa','#818cf8','#60a5fa'];
+
+  let html='<pre>';
+  for(let r=0; r<viewRows; r++){
+    let line='';
+    let last='';
+    for(let c=0; c<cols; c++){
+      const idx=r*cols+c;
+      let ch=chars[idx];
+      let col=colors[idx];
+      // message row override
+      if(msg && r===viewRows-1 && c>=mstart && c<mstart+msg.length){
+        ch=msg[c-mstart];
+        col=msgClr[(c-mstart+shift)%msgClr.length];
+      }
+      if(ch===' '||!col){
+        if(last){line+='</span>';last='';}
+        line+=' ';
+      } else {
+        if(col!==last){
+          if(last) line+='</span>';
+          line+=`<span style="color:${col}">${ch}`;
+          last=col;
+        } else {
+          line+=ch;
+        }
+      }
+    }
+    if(last) line+='</span>';
+    html+=line+'\n';
+  }
+  html+='</pre>';
+  return html;
+}
+
+// ============================================================
+// Main
+// ============================================================
+const nameForm=document.getElementById('name-form');
+const nameInput=document.getElementById('name-input');
+const intro=document.getElementById('intro');
+const result=document.getElementById('result');
+const bouquetName=document.getElementById('bouquet-name');
+const asciiContainer=document.getElementById('ascii-container');
+const flowerLegend=document.getElementById('flower-legend');
+const backBtn=document.getElementById('back-btn');
+
+let sceneData=null, hearts=[], animId=null, startTime=0, stopped=false;
+
+nameForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  const name=nameInput.value.trim();
+  if(!name)return;
+  startBouquet(name);
+});
+
+backBtn.addEventListener('click',()=>{
+  stopped=true;
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+  result.classList.remove('show');
+  intro.classList.remove('hidden');
+  backBtn.style.display='none';
+});
+
+function getSize() {
+  const w = asciiContainer.clientWidth;
+  const h = asciiContainer.clientHeight;
+  const isMobile = w < 600;
+  const fontSize = Math.max(9, Math.min(isMobile ? 12 : 18, Math.floor(w * 0.025)));
+  const cellW = fontSize * 0.6;
+  const cellH = fontSize;
+  return {
+    cols: Math.max(20, Math.floor(w / cellW)),
+    rows: Math.max(12, Math.floor(h / cellH)),
+    fontSize
+  };
+}
+
+function startBouquet(name){
+  stopped=false;
+  bouquetName.textContent=name;
+  const letters=name.split('');
+  const flowerList=[];
+  const legendHtml=[];
+  const golden=Math.PI*(3-Math.sqrt(5));
+  const C=[0,0.12,0], Dc=0.58;
+
+  for(let i=0;i<letters.length;i++){
+    const el=Math.PI/180*(88-60*Math.sqrt(i/(letters.length-1||1)));
+    const az=i*golden;
+    const d=[Math.cos(el)*Math.cos(az), Math.sin(el), Math.cos(el)*Math.sin(az)];
+    const pos=add(C,d,Dc*(0.92+Math.random()*0.13));
+    const axis=norm(d);
+    const ch=letters[i].toUpperCase();
+    const fl=getFlower(ch);
+    flowerList.push({
+      letter:ch, pos, axis, pal:fl.pal, center:fl.center,
+      n_pet:Math.floor(Math.random()*4)+6, R:0.11+Math.random()*0.03,
+      seed:Math.random()*6.28, kind:fl.kind||'disc'
+    });
+    const dotColor=fl.pal[Math.floor(fl.pal.length/2)]||'#888';
+    legendHtml.push(`<span class="legend-item"><span class="legend-dot" style="background:${dotColor}"></span> ${ch} — ${fl.name}</span>`);
+  }
+  flowerLegend.innerHTML=legendHtml.join('');
+
+  sceneData=buildScene(flowerList);
+  hearts=[];
+  const hColors=['#f472b6','#e879f9','#a78bfa','#818cf8','#60a5fa','#f472b6'];
+  for(let i=0;i<18;i++) hearts.push([Math.random(),1+Math.random(),Math.random()*0.08+0.03,Math.random()*6.28,hColors[Math.floor(Math.random()*6)]]);
+
+  intro.classList.add('hidden');
+  result.classList.add('show');
+  backBtn.style.display='block';
+  startTime=performance.now()/1000;
+  if(animId)cancelAnimationFrame(animId);
+
+  function animate(now){
+    if(stopped)return;
+    const t=now/1000-startTime;
+    const dt=1/FPS;
+    
+    // Hearts float only after bloom
+    if (t >= 5.5) {
+      for(const h of hearts){
+        h[1]-=h[2]*dt;
+        if(h[1]<0){h[0]=Math.random();h[1]=1;h[4]=hColors[Math.floor(Math.random()*6)];}
+      }
+      while(hearts.length<18) hearts.push([Math.random(),1+Math.random(),Math.random()*0.08+0.03,Math.random()*6.28,hColors[Math.floor(Math.random()*6)]]);
+    }
+
+    const size=getSize();
+    const html=renderFrame(sceneData,t,size.cols,size.rows);
+    asciiContainer.innerHTML=html;
+    asciiContainer.style.fontSize=size.fontSize+'px';
+    animId=requestAnimationFrame(animate);
+  }
+  animId=requestAnimationFrame(animate);
+}
+</script>
+</body>
+</html>
